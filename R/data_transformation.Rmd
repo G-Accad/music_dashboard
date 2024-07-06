@@ -1,0 +1,375 @@
+---
+title: "data_transformation"
+author: "grace"
+output: html_document
+---
+
+## Folk Singing
+
+### Data Transformation
+
+```{r libraries, echo=FALSE, warning=FALSE}
+
+
+# Install and load necessary libraries
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(tidyverse)
+library(readxl)
+library(plotly)
+library(leaflet)
+library(writexl)
+
+```
+
+
+```{r data, echo=FALSE}
+
+# Replace "Sheet1" with the actual sheet name
+data <- read_excel("//data", sheet = "SURVEY CLEAN NVIVO 08.09")
+
+safe_data<- data
+```
+
+
+```{r column renaming, echo=FALSE}
+# Extract the questions from the first row
+questions <- data[1, ]
+
+# Rename the columns with the questions
+colnames(data) <- paste0("Q", 1:ncol(data), ": ", questions)
+
+# Remove the first row (containing the original column names)
+data <- data[-1, ]
+
+rm(questions)
+```
+
+
+
+
+```{r store questions in txt, echo=FALSE}
+# Extract column names
+column_names <- colnames(data)
+
+# Write column names to a text file
+write.table(column_names, file = "~/folk_singing/questions.txt", col.names = FALSE, row.names = FALSE, quote = FALSE)
+
+```
+
+Seperate the answers of column 21 into several categories to later join them (one hot encoding)m
+
+```{r , echo=FALSE}
+
+your_data <- data
+# Separate the column into multiple rows
+your_data_long <- separate_rows(your_data, `Q21: How have you been involved in organising folk singing events? Tick all that apply`, sep = ",")
+
+# Spread the data back into columns
+your_data_wide <- spread(your_data_long, key = `Q21: How have you been involved in organising folk singing events? Tick all that apply`, value = `Q21: How have you been involved in organising folk singing events? Tick all that apply`)
+
+your_data_wide$`<NA>`<- NULL
+data<- your_data_wide
+rm(your_data,your_data_long,your_data_wide)
+```
+Something was weird between :advertising and volunteering, split into 2 columns maybe due to " in name, no further investigation is needed as they will be joined into one. 
+
+Create a new column "Organiser" (Professional,Volunteer,Non-organiser) and remove questions 20 and 21 and all other columns created for that purpose
+
+```{r Organiser, echo=FALSE}
+
+
+data$Organiser <- ifelse(
+  !is.na(data[, 76]) | !is.na(data[, 75]),   # Check if either column 76 or 75 has a value
+  "Professional",
+  ifelse(
+    apply(data[, c(74, 77:80)], 1, function(x) any(!is.na(x))),  # Check if any of the other columns have a value
+    "Volunteer",
+    "Non-organiser"
+  )
+)
+
+# Delete columns 74 to 80
+data <- subset(data, select = -c(74:80))
+
+
+# Check if all rows with "No" in column 20 have "Non-organiser" in column 74
+result <- all(data[!is.na(data[, 20]) & data[, 20] == "No", 74] == "Non-organiser", na.rm = TRUE)
+print(result)
+data$`Q20: Have you ever been involved in organising folk singing events as an organiser, promoter, volunteer or in another way?`<- NULL
+data$Organiser<-as.factor(data$Organiser)
+
+```
+
+
+Creating column Ethnicity from Q61 till 66 into 4 categories
+
+```{r Ethnicity, echo=FALSE}
+
+unique_values <- table(data$`Q61: What best describes your ethnic group? - Selected Choice`)
+
+# Create a new column 'Ethnicity' based on conditions
+data <- data %>%
+  mutate(
+    Ethnicity = ifelse(
+      is.na(`Q61: What best describes your ethnic group? - Selected Choice`) | `Q61: What best describes your ethnic group? - Selected Choice` == "Prefer not to say",
+      "NA",
+      ifelse(
+        `Q61: What best describes your ethnic group? - Selected Choice` %in% c(
+          "White English/Welsh/Scottish/Northern Irish/British",
+          "White Cornish"
+        ),
+        "White UK",
+        ifelse(
+          `Q61: What best describes your ethnic group? - Selected Choice` %in% c(
+            "Any other white background, please describe",
+            "White Gypsy or Traveller",
+            "White Irish"
+          ),
+          "White Other",
+          ifelse(
+            `Q61: What best describes your ethnic group? - Selected Choice` %in% c(
+              "Any other Mixed/Multiple ethnic background, please describe",
+              "White and Asian",
+              "White and Black Caribbean"
+            ),
+            "Mixed/multiple",
+            ifelse(
+              `Q61: What best describes your ethnic group? - Selected Choice` %in% c(
+                "African",
+                "Any other Black/African/Caribbean background, please describe",
+                "Indian",
+                 "Any other ethnic group, please describe"),
+              "Non-White",
+              "Unknown"
+            )
+          )
+        )
+      )
+    )
+  )
+
+data$`Q61: What best describes your ethnic group? - Selected Choice`<- NULL
+data$`Q62: What best describes your ethnic group? - Any other white background, please describe - Text`<- NULL
+data$`Q63: What best describes your ethnic group? - Any other Black/African/Caribbean background, please describe - Text`<- NULL
+data$`Q64: What best describes your ethnic group? - Any other Asian background, please describe - Text`<- NULL
+data$`Q65: What best describes your ethnic group? - Any other Mixed/Multiple ethnic background, please describe - Text`<- NULL
+data$`Q66: What best describes your ethnic group? - Any other ethnic group, please describe - Text`<- NULL
+
+data$Ethnicity<-as.factor(data$Ethnicity)
+```
+
+
+Creating column for Gender
+
+```{r Gender, echo=FALSE}
+
+# Create a new column 'Gender' based on conditions
+data <- data %>%
+  mutate(
+    Gender = case_when(
+      `Q48: What best describes your gender? - Selected Choice` == "Male" ~ "Male",
+      `Q48: What best describes your gender? - Selected Choice` == "Female" ~ "Female",
+      TRUE ~ "Trans/non-binary/other"
+    )
+  )
+
+data$Gender <- as.factor(data$Gender)
+
+data$`Q48: What best describes your gender? - Selected Choice`<-NULL
+data$`Q49: What best describes your gender? - In another way, please describe - Text`<-NULL
+
+```
+
+until here: data has: 805 obs and 67 var
+
+
+
+```{r Disability, echo=FALSE}
+#Q71
+
+data$Disability<- as.factor(data$`Q71: Do you consider yourself to be d/Deaf or disabled, or do you have a long-term physical or mental health condition? (We will not ask you to identify any disability or health condition).`)
+
+summary(data$Disability)
+
+# Replace "Prefer not to say" with NA in your column
+data <- data %>%
+  mutate(Disability = case_when(
+    Disability == "Prefer not to say" ~ NA_character_,
+    TRUE ~ Disability
+  ))
+data$Disability<-as.factor(data$Disability)
+data$`Q71: Do you consider yourself to be d/Deaf or disabled, or do you have a long-term physical or mental health condition? (We will not ask you to identify any disability or health condition).`<- NULL
+```
+
+```{r Sexuality, echo=FALSE}
+data$Sexuality<- data$`Q50: How would you describe your sexual orientation? - Selected Choice`
+
+data <- data %>%
+  mutate(Sexuality = case_when(
+    Sexuality == "Prefer not to say" ~ NA_character_,
+    TRUE ~ Sexuality
+  ))
+
+data$Sexuality<-as.factor(data$Sexuality)
+summary(data$Sexuality)
+
+
+data$`Q50: How would you describe your sexual orientation? - Selected Choice`<-NULL
+data$`Q51: How would you describe your sexual orientation? - In another way, please describe - Text`<-NULL
+```
+
+
+```{r Age, echo=FALSE}
+
+data$Age<-as.numeric(data$`Q47: How old are you?`)
+
+summary(data$Age)
+
+data$`Q47: How old are you?`<-NULL
+
+```
+
+
+#### Summary for the Demographic Variables
+```{r Summary, echo=FALSE}
+
+summary(data$Age)
+summary(data$Gender)
+
+summary(data$Disability)
+summary(data$Ethnicity)
+
+summary(data$Organiser)
+
+summary(data$Sexuality)
+```
+
+
+```{r , echo=FALSE,eval=FALSE}
+
+# Education distribution
+education_plot <- your_data %>%
+  plot_ly(x = ~Q52, type = "bar", marker = list(color = ~Q52)) %>%
+  layout(title = "Education Distribution", xaxis = list(title = "Education"), yaxis = list(title = "Count"))
+
+# Social class distribution
+class_plot <- data %>%
+  plot_ly(x = ~`Q54: Which social class do you most identify with? - Selected Choice`, type = "bar", marker = list(color = ~`Q54: Which social class do you most identify with? - Selected Choice`)) %>%
+  layout(title = "Social Class Distribution", xaxis = list(title = "Social Class"), yaxis = list(title = "Count"))
+
+# Religion distribution
+religion_plot <- your_data %>%
+  plot_ly(x = ~Q67, type = "bar", marker = list(color = ~Q67)) %>%
+  layout(title = "Religion Distribution", xaxis = list(title = "Religion"), yaxis = list(title = "Count"))
+
+# Disability distribution check Q28
+
+```
+
+
+
+```{r , echo=FALSE}
+
+ data1<- data[,-c(4:59)]
+
+
+
+data1 <- data1 %>%
+  rename(
+    singing_type = `Q2: What kind of singing do you do? Tick all that apply`,
+      folk_events = `Q3: What kinds of folk singing events do you attend? Tick all that apply - Selected Choice`
+  )
+
+# Separate values in the 'singing_type' column into separate rows
+data1_separated <- data1 %>%
+  separate_rows(singing_type, sep = ",")
+
+# Add a binary indicator column for each unique value in 'singing_type'
+data1_encoded <- data1_separated %>%
+  pivot_wider(names_from = singing_type, values_from = singing_type, values_fn = length, values_fill = 0)
+
+# Print the encoded data
+head(data1_encoded)
+
+data1<-data1_encoded
+
+rm(data1_separated,data1_encoded)
+
+
+data1<- data1[,-13]
+
+
+# Separate values in the 'folk_events' column into separate rows
+data1_separated <- data1 %>%
+  separate_rows(folk_events, sep = ",")
+
+# Add a binary indicator column for each unique value in 'folk_events'
+data1_encoded <- data1_separated %>%
+  pivot_wider(names_from = folk_events, values_from = folk_events, values_fn = length, values_fill = 0)
+
+data1<-data1_encoded
+
+rm(data1_separated,data1_encoded)
+
+data1<- data1[,-20]
+data1<- data1[,-21]
+```
+
+
+
+##final data transformation before saving the data
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+colnames(data)[60] <- "Political"
+data$Political<-as.factor(data$Political)
+colnames(data)[58] <- "PoliticalParty"
+data$PoliticalParty<-as.factor(data$PoliticalParty)
+colnames(data)[8]<- "Microphone"
+colnames(data)[9]<- "Standing"
+colnames(data)[10]<- "Instrument"
+colnames(data)[11]<- "Word"
+data$Microphone<-as.factor(data$Microphone)
+data$Standing<-as.factor(data$Standing)
+data$Instrument<-as.factor(data$Instrument)
+data$Word<-as.factor(data$Word)
+data$Ethnicity<-as.factor(data$Ethnicity)
+
+
+
+#remove under 18s
+data <- data[data$Age >= 18, ]
+
+# remove category for impact as we wont do any analysis on it yet: 
+ data$category <- NULL
+ 
+#change ehtnicity into three categories
+ 
+ data <- data %>%
+  mutate(Ethnicity = case_when(
+    Ethnicity %in% c("Mixed/multiple", "Non-White") ~ "Any Other Ethnicity",
+    TRUE ~ as.character(Ethnicity)
+  ))
+ 
+data <- data %>%
+  mutate(Ethnicity = case_when(
+    grepl("^\\s*NA\\s*$|^\\s*<NA>\\s*$|^\\s*Na's\\s*$", Ethnicity, ignore.case = TRUE) ~ NA_character_,
+    TRUE ~ as.character(Ethnicity)
+  ))
+
+
+#create Age based one 3 categories
+data$AgeCategorical <- cut(data$Age, breaks = c(18, 40, 60, Inf), labels = c("18-40", "41-60", "61-80+"), right = FALSE)
+
+
+# Write the data to an Excel file
+write_xlsx(data, "dataclean.xlsx")
+
+write_xlsx(unique_data, "/unique_data.xlsx")
+
+```
+
+
+
+

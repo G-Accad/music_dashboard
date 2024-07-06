@@ -1,0 +1,233 @@
+---
+title: "map"
+author: "grace"
+output: html_document
+---
+
+
+
+
+
+Postcodes
+
+```{r , echo=FALSE,eval=FALSE}
+unique_values <- table(data$`Q57: Please provide the first part of your postcode, e.g., S35 or BD22. (This question is important for understanding the distribution of our respondents. Respondents cannot be identified from their postcode data. You will not be identified, contacted or added to any mailing lists.) - Postcode`)
+
+# Print the unique values and their frequencies
+print(unique_values)
+```
+
+
+
+
+## Map
+
+```{r , echo=FALSE}
+geodata<- read.csv("/Downloads/ukpostcodes.csv")
+
+data$Postcode <-  toupper(data$`Q57: Please provide the first part of your postcode, e.g., S35 or BD22. (This question is important for understanding the distribution of our respondents. Respondents cannot be identified from their postcode data. You will not be identified, contacted or added to any mailing lists.) - Postcode`)
+data$`Q57: Please provide the first part of your postcode, e.g., S35 or BD22. (This question is important for understanding the distribution of our respondents. Respondents cannot be identified from their postcode data. You will not be identified, contacted or added to any mailing lists.) - Postcode`<-NULL
+
+# Extract the first part of the postcode in the geodata
+geodata$short_postcode <- sub("^(\\S+).*", "\\1", geodata$postcode)
+
+
+
+# Select specific columns from each dataset
+selected_data <- data %>% select(Postcode)
+selected_geodata <- geodata %>% select(short_postcode, latitude, longitude)
+distinct_geodata <- distinct(selected_geodata, short_postcode, .keep_all = TRUE)
+
+# Merge datasets based on the short postcode
+map_data <- merge(selected_data, distinct_geodata, by.x = "Postcode", by.y = "short_postcode")
+
+
+
+
+map <- leaflet(map_data) %>%
+  addTiles() %>%
+  addMarkers(
+    lng = ~longitude,
+    lat = ~latitude,
+    label = ~Postcode,  )
+
+# Print the map
+map
+
+rm(map,distinct_geodata,geodata,selected_data,selected_geodata)
+```
+
+
+
+
+```{r , echo=FALSE}
+
+map_data <- map_data %>%
+  group_by(Postcode) %>%
+  mutate(Count = n())
+
+# Print the first few rows of the updated dataset
+head(data)
+
+
+```
+
+
+
+
+```{r , echo=FALSE}
+
+unique_data <- distinct(map_data)
+
+map <- leaflet(unique_data) %>%
+  addTiles() %>%
+  addMarkers(
+    lng = ~longitude,
+    lat = ~latitude,
+    label = ~Postcode,  )
+
+# Print the map
+map
+
+
+
+```
+
+
+
+
+```{r , echo=FALSE}
+# Assuming your map data is stored in a data frame called "map_data"
+library(leaflet)
+
+# Create a basic leaflet map with tiles
+map <- leaflet(unique_data) %>%
+  addTiles() %>%
+  
+  # Add marker clusters
+  addMarkers(
+    lng = ~longitude,
+    lat = ~latitude,
+    label = ~Postcode,
+    clusterOptions = markerClusterOptions()
+  )
+
+# Print the map
+map
+
+```
+
+
+
+
+
+
+```{r , echo=FALSE}
+# Create a basic leaflet map with tiles
+map <- leaflet(unique_data) %>%
+  addTiles() %>%
+  
+  # Add marker clusters with count labels
+  addMarkers(
+    lng = ~longitude,
+    lat = ~latitude,
+    label = ~as.character(Count),  # Display count as label
+    clusterOptions = markerClusterOptions(
+      showCoverageOnHover = FALSE,  # Disable coverage display on hover
+      spiderfyOnMaxZoom = FALSE     # Disable spiderfy on max zoom
+    )
+  ) %>%
+  
+  # Customize marker cluster appearance
+  addLegend(
+    "bottomright",
+    title = "Cluster Count",
+    colors = c("lightgreen","#FFFF99","#FFC266"),
+    labels = c("1-10", "11-100", ">100"),
+    opacity = 1
+  )
+
+# Print the map
+map
+
+```
+
+
+
+
+```{r , echo=FALSE}
+# Create a basic leaflet map with tiles
+map <- leaflet(unique_data) %>%
+  addTiles() %>%
+  
+  # Add marker clusters with count labels
+  addMarkers(
+    lng = ~longitude,
+    lat = ~latitude,
+    label = ~as.character(Count),  # Display count as label
+    clusterOptions = markerClusterOptions(
+      showCoverageOnHover = FALSE,  # Disable coverage display on hover
+      spiderfyOnMaxZoom = FALSE     # Disable spiderfy on max zoom
+    )
+  ) %>%
+  
+  # Customize marker cluster appearance
+  addLegend(
+    "bottomright",
+    title = "Cluster Count",
+    colors = c("lightgreen","#FFFF99","#FFC266"),
+    labels = c("1-10", "11-100", ">100"),
+    opacity = 1
+  )
+
+# Print the map
+map
+
+```
+
+
+
+Added heatmap
+
+```{r , echo=FALSE,eval=FALSE}
+
+# Create a basic leaflet map with tiles
+map <- leaflet(unique_data) %>%
+  addTiles() %>%
+  
+  # Add heatmap layer
+  addHeatmap(
+    lng = ~longitude,
+    lat = ~latitude,
+    intensity = ~Count,  # Use Count as intensity for the heatmap
+    blur = 20,           # Set the blur radius for heatmap
+    max = 1,             # Adjust the maximum intensity
+    radius = 15          # Set the radius of each heatmap point
+  ) %>%
+  
+  # Add marker clusters with count labels
+  addMarkers(
+    lng = ~longitude,
+    lat = ~latitude,
+    label = ~as.character(Count),  # Display count as label
+    clusterOptions = markerClusterOptions(
+      showCoverageOnHover = FALSE,  # Disable coverage display on hover
+      spiderfyOnMaxZoom = FALSE     # Disable spiderfy on max zoom
+    )
+  ) %>%
+  
+  # Customize marker cluster appearance
+  addLegend(
+    "bottomright",
+    title = "Cluster Count",
+    colors = c("lightgreen","#FFFF99","#FFC266"),
+    labels = c("1-10", "11-100", ">100"),
+    opacity = 1
+  )
+
+# Print the map
+map
+
+
+
+```

@@ -1,0 +1,291 @@
+---
+title: 'Overall Findings'
+author: "grace"
+output: html_document
+---
+
+```{r load libraries}
+library(tidyverse)
+library(readxl)
+library(scales)
+library(DT)
+library(gt)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(plotly)
+library(leaflet)
+library(leaflet.extras)
+library(crosstalk)
+
+```
+
+
+```{r 3 Stats, echo=FALSE,warning=FALSE,message=FALSE}
+
+###########Gender
+
+data$Gender<-as.factor(data$Gender)
+
+# Calculate the number of males
+num_males <- sum(data$Gender == "Male", na.rm = TRUE)
+
+# Calculate the percentage of males
+p_males <- (num_males / (nrow(data)- sum(is.na(data$Gender)))) * 100
+
+########## Ethnicity
+
+
+num_whiteuk <- sum(data$Ethnicity == "White UK", na.rm = TRUE)
+
+
+
+############### Age
+age_median <- median(data$Age, na.rm = TRUE)
+
+```
+
+
+
+```{r age plot, echo=FALSE,warning=FALSE,message=FALSE}
+
+# Create a histogram for Age distribution
+age_hist <- plot_ly(data, x = ~Age, type = 'histogram',
+                    marker = list(color = 'rgba(0, 123, 255, 0.7)'),
+                    name = "Age Distribution") %>%
+  layout(title = "Age Distribution of Folk Music Listeners",
+         xaxis = list(title = "Age"),
+         yaxis = list(title = "Count"),
+         bargap = 0.2)
+
+# Display the plot
+age_hist
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+# Create a pie chart for Gender distribution
+gender_pie <- plot_ly(data, labels = ~Gender, type = 'pie',
+                      marker = list(colors = c('rgba(255, 99, 132, 0.7)',
+                                               'rgba(54, 162, 235, 0.7)',
+                                               'rgba(255, 206, 86, 0.7)'),
+                                    line = list(color = 'rgba(255, 255, 255, 1)', width = 2))) %>%
+  layout(title = "Gender Distribution of Folk Music Listeners",
+         showlegend = TRUE)
+
+# Display the plot
+gender_pie
+
+
+# Combine plots into a single dashboard
+combined_plot <- subplot(age_hist, gender_pie, nrows = 2, titleX = TRUE, titleY = TRUE)
+
+# Display the combined plot
+combined_plot
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+

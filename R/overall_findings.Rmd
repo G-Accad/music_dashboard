@@ -1,0 +1,327 @@
+---
+title: 'Overall Findings'
+author: "grace"
+output: html_document
+---
+
+```{r load libraries,warning=FALSE, message=FALSE}
+library(tidyverse)
+library(readxl)
+library(scales)
+library(DT)
+library(gt)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(plotly)
+library(leaflet)
+library(leaflet.extras)
+library(crosstalk)
+library(waffle)
+
+```
+
+# Tab 1 Overall
+
+```{r 3 Stats, echo=FALSE,warning=FALSE,message=FALSE}
+
+###########Gender
+
+data$Gender<-as.factor(data$Gender)
+
+# Calculate the number of males
+num_males <- sum(data$Gender == "Male", na.rm = TRUE)
+
+# Calculate the percentage of males
+p_males <- (num_males / (nrow(data)- sum(is.na(data$Gender)))) * 100
+
+########## Ethnicity
+
+
+num_whiteuk <- sum(data$Ethnicity == "White UK", na.rm = TRUE)
+
+
+
+############### Age
+age_median <- median(data$Age, na.rm = TRUE)
+
+```
+
+## Age 
+
+```{r age plot, echo=FALSE,warning=FALSE,message=FALSE}
+
+# Create a histogram for Age distribution
+age_hist <- plot_ly(data, x = ~Age, type = 'histogram',
+                    marker = list(color = 'rgba(0, 123, 255, 0.7)'),
+                    name = "Age Distribution") %>%
+  layout(title = "Age Distribution",
+         xaxis = list(title = "Age"),
+         yaxis = list(title = "Count"),
+         bargap = 0.2)
+
+# Display the plot
+age_hist
+
+
+```
+
+
+
+
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+# Adjusting colors for the Gender column
+age_gender_plot <- data %>%
+  plot_ly(x = ~Age, color = ~Gender, type = "histogram",
+          colors = c("Female" = "hotpink", "Male" = "lightblue", "Trans/non-binary/other" = "purple")) %>%
+  layout(
+    xaxis = list(title = "Age", tickangle = 0),  # Rotate x-axis labels to be vertical
+    yaxis = list(title = "Count")
+  )
+
+age_gender_plot
+
+
+
+```
+
+
+
+## Gender
+
+
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+# Create a pie chart for Gender distribution without NA values
+gender_pie <- plot_ly(data = subset(data, !is.na(Gender)), labels = ~Gender, type = 'pie',
+                      marker = list(colors = c("lightblue","hotpink","purple"),
+                                    line = list(color = 'rgba(255, 255, 255, 1)', width = 5))) %>%
+  layout(title = "Gender",
+         showlegend = TRUE)
+
+# Display the plot
+gender_pie
+
+
+```
+
+
+
+## Sexuality
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+s<- c(Straight= 646,Bisexual=43, Gay = 5, Lesbian=10, Queer=22, Questioning= 6, Other =65)
+waffle(s, size = 0, rows = 18)
+```
+
+
+
+
+
+## Ethnicity
+
+
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+# Count occurrences of each Ethnicity
+ethnicity_counts <- table(data$Ethnicity)
+
+# Create plotly donut chart
+plot_ly(labels = names(ethnicity_counts), values = ethnicity_counts, type = 'pie',
+        textinfo = 'percent', hole = 0.6) %>%
+  layout(title = "Ethnicity Distribution",
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+
+```
+
+
+```{r }
+#| title: Age vs Sexuality
+
+
+age_sexuality_plot <- subset(data, !is.na(Sexuality)) %>%
+  plot_ly(x = ~Age, color = ~Sexuality, type = "histogram",xbins = list(size = 15)) %>%
+  layout(
+    xaxis = list(title = "Age", tickangle = 0),
+    yaxis = list(title = "Count"))
+ 
+age_sexuality_plot
+
+```
+
+```{r }
+#| title: Age vs Ethnicity
+
+
+age_ethnicity_plot <- subset(data, !is.na(Ethnicity)) %>%
+  plot_ly(x = ~Age, color = ~Ethnicity, type = "histogram",xbins = list(size = 15)) %>%
+  layout(
+    xaxis = list(title = "Age", tickangle = 0),
+    yaxis = list(title = "Count"))
+ 
+age_ethnicity_plot
+
+```
+
+```{r }
+#| title: Age vs Disability
+
+
+age_disability_plot <- subset(data, !is.na(Disability)) %>%
+  plot_ly(x = ~Age, color = ~Disability, type = "histogram",xbins = list(size = 15)) %>%
+  layout(
+    xaxis = list(title = "Age", tickangle = 0),
+    yaxis = list(title = "Count"))
+ 
+age_disability_plot
+
+```
+
+
+
+# Tab 2 Types of Singing
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+
+
+
+
+```
+
+
+

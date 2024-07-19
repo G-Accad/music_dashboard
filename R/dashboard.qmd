@@ -1,0 +1,349 @@
+---
+title: "Folk Singing"
+author: "DAS"
+format: 
+  dashboard:
+    nav-buttons: [github]
+    github: https://github.com/g-accad/music_dashboard
+logo: images/AccessFolk.jpg
+theme: [sandstone, theme/custom.scss]
+fig-width: 10
+fig-asp: 0.3
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+#| label: load-packages
+#| message: false
+
+library(tidyverse)
+library(readxl)
+library(scales)
+library(DT)
+library(gt)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(plotly)
+library(leaflet)
+library(leaflet.extras)
+library(crosstalk)
+library(htmlwidgets)
+library(waffle)
+theme_set(theme_minimal(base_size = 24, base_family = "Atkinson Hyperlegible"))
+```
+
+```{r}
+#| label: load-data
+#| message: false
+data <- read.csv("C:/Users/cs1gac/Documents/GitHub/music_dashboard/data/final_dataset.csv")
+unique_data <- read_excel("C:/Users/cs1gac/Documents/GitHub/music_dashboard/data/unique_data.xlsx")
+```
+
+#  {.sidebar}
+
+This dashboard displays statistics for a survey on Folk Singing:
+
+|             |                |
+|-------------|----------------|
+| **Country** | United Kingdom |
+| **Year**    | `2023`         |
+
+------------------------------------------------------------------------
+
+This research is undertaken by:
+
+|                 |                          |
+|-----------------|--------------------------|
+| **University**  | University of Sheffield  |
+| **Department**  | Music                    |
+| **Researchers** | Kirsty Kay and Fay Hield |
+
+------------------------------------------------------------------------
+
+::: {.callout-note collapse="true"}
+## Disclaimer
+
+Please note that this study is not yet complete, some features and functionalities may not be available at this time. We apologize for any inconvenience this may cause.
+
+We appreciate your patience and understanding. The Dashboard will be available soon on [Access Folk](https://accessfolk.sites.sheffield.ac.uk/home).
+:::
+
+# Overall {orientation="columns"}
+
+## Column {width="60%"}
+
+```{r}
+#| label: folk-singing
+#| results: hide
+
+
+data$Gender<-as.factor(data$Gender)
+
+
+num_males <- sum(data$Gender == "Male", na.rm = TRUE)
+p_males <- (num_males / (nrow(data)- sum(is.na(data$Gender)))) 
+p_males_color <- "primary"  
+
+num_whiteuk <- sum(data$Ethnicity == "White UK", na.rm = TRUE)
+p_ethnicity <-  (num_whiteuk / (nrow(data)- sum(is.na(data$Ethnicity)))) 
+p_ethnicity_color <- "success"  
+
+
+
+age_median <- median(data$Age, na.rm = TRUE)
+p_age <- age_median
+p_age_color <- "info"  
+
+
+```
+
+### Row {height="20%"}
+
+```{r}
+#| content: valuebox
+#| title: "Male"
+
+list(
+  icon = "gender-male",
+  color = p_males_color,
+  value = label_percent(accuracy = 0.1)(p_males)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "White British"
+
+list(
+  icon = "globe-americas",
+  color = p_ethnicity_color,
+  value = label_percent(accuracy = 0.1)(p_ethnicity)
+)
+```
+
+```{r}
+#| content: valuebox
+#| title: "Average Age"
+
+list(
+  icon = "graph-up-arrow",
+  color = p_age_color,
+  value = (p_age)
+)
+```
+
+### Row {height="80%" .tabset}
+
+
+
+```{r}
+#| title: Age (o1)
+
+# Create a histogram for Age distribution
+age_hist <- plot_ly(data, x = ~Age, type = 'histogram',
+                    marker = list(color = 'rgba(0, 123, 255, 0.7)'),
+                    name = "Age Distribution") %>%
+  layout(xaxis = list(title = "Age"),
+         yaxis = list(title = "Count"),
+         bargap = 0.2)
+
+# Display the plot
+age_hist
+
+
+```
+
+```{r}
+#| title: Age vs Gender (o2)
+age_plot <- data %>%
+  plot_ly(x = ~Age, color = ~Gender, type = "histogram") %>%
+  layout(
+    xaxis = list(title = "Age", tickangle = 0),  # Rotate x-axis labels to be vertical
+    yaxis = list(title = "Count")
+  )
+
+age_plot
+```
+
+
+
+
+```{r , echo=FALSE,warning=FALSE,message=FALSE}
+#| title: Age vs Gender (o3)
+
+
+# Adjusting colors for the Gender column
+age_gender_plot <- data %>%
+  plot_ly(x = ~Age, color = ~Gender, type = "histogram",
+          colors = c("Female" = "hotpink", "Male" = "lightblue", "Trans/non-binary/other" = "purple")) %>%
+  layout(
+    xaxis = list(title = "Age", tickangle = 0),  # Rotate x-axis labels to be vertical
+    yaxis = list(title = "Count")
+  )
+
+age_gender_plot
+
+
+
+```
+
+
+
+```{r}
+#| title: Gender (o1)
+gender_donut <- 
+  plot_ly(
+    data = subset(data, !is.na(Gender)),
+    labels = ~Gender,
+    type = "pie",
+    hole = 0.4,  # Set the size of the hole for a donut effect
+    marker = list(colors = c( "yellow", "violet"))  # Customize colors as needed
+  ) %>%
+  layout(
+    showlegend = TRUE  # Set to FALSE if you don't want to show the legend
+  )
+
+# Print the plot
+gender_donut
+```
+
+
+```{r }
+#| title: Gender (o2)
+
+# Create a pie chart for Gender distribution without NA values
+gender_pie <- plot_ly(data = subset(data, !is.na(Gender)), labels = ~Gender, type = 'pie',
+                      marker = list(colors = c("lightblue","hotpink","purple"),
+                                    line = list(color = 'rgba(255, 255, 255, 1)', width = 5))) %>%
+  layout(  showlegend = TRUE)
+
+# Display the plot
+gender_pie
+
+
+```
+
+
+```{r}
+#| title: Sexual Orientation
+s<- c(Straight= 646,Bisexual=43, Gay = 5, Lesbian=10, Queer=22, Questioning= 6, Other =65)
+waffle(s, size = 0, rows = 18)
+```
+
+
+```{r}
+#| title: Ethnicity
+
+# Count occurrences of each Ethnicity
+ethnicity_counts <- table(data$Ethnicity)
+
+# Create plotly donut chart
+plot_ly(labels = names(ethnicity_counts), values = ethnicity_counts, type = 'pie',
+        textinfo = 'percent', hole = 0.6) %>%
+  layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+```
+
+
+```{r }
+#| title: Age vs Sexuality
+
+
+age_sexuality_plot <- subset(data, !is.na(Sexuality)) %>%
+  plot_ly(x = ~Age, color = ~Sexuality, type = "histogram",xbins = list(size = 15)) %>%
+  layout(
+    xaxis = list(title = "Age", tickangle = 0),
+    yaxis = list(title = "Count"))
+ 
+age_sexuality_plot
+
+```
+
+```{r }
+#| title: Age vs Ethnicity
+
+
+age_ethnicity_plot <- subset(data, !is.na(Ethnicity)) %>%
+  plot_ly(x = ~Age, color = ~Ethnicity, type = "histogram",xbins = list(size = 15)) %>%
+  layout(
+    xaxis = list(title = "Age", tickangle = 0),
+    yaxis = list(title = "Count"))
+ 
+age_ethnicity_plot
+
+```
+
+```{r,warning=FALSE,message=FALSE}
+#| title: Age vs Disability
+
+
+age_disability_plot <- subset(data, !is.na(Disability)) %>%
+  plot_ly(x = ~Age, color = ~Disability, type = "histogram",xbins = list(size = 15)) %>%
+  layout(
+    xaxis = list(title = "Age", tickangle = 0),
+    yaxis = list(title = "Count"))
+ 
+age_disability_plot
+
+```
+
+
+## Column {width="40%"}
+
+```{r}
+#| title: Map
+
+# Create a basic leaflet map with tiles
+map <- leaflet(unique_data) %>%
+  addTiles() %>%
+  
+  # Add marker clusters with count labels
+  addMarkers(
+    lng = ~longitude,
+    lat = ~latitude,
+    label = ~as.character(Count),  # Display count as label
+    clusterOptions = markerClusterOptions(
+      showCoverageOnHover = FALSE,  # Disable coverage display on hover
+      spiderfyOnMaxZoom = FALSE     # Disable spiderfy on max zoom
+    )
+  ) %>%
+  
+  # Customize marker cluster appearance
+  addLegend(
+    "bottomright",
+    title = "Cluster Count",
+    colors = c("lightgreen","#FFFF99","#FFC266"),
+    labels = c("1-10", "11-100", ">100"),
+    opacity = 1
+  )
+
+# Print the map
+map
+```
+
+
+
+# Folk Singing Types
+
+# Folk Events 
+
+# Preference 
+
+# Political Affiliation
+
+# Data
+
+```{r}
+data |>
+  datatable(
+    colnames = c("Age","Ethnicity","Sexuality","Political", "Organiser", "Gender", "Disability" , "PoliticalParty" ),
+    options = list(dom = 'ftp', paging = TRUE)
+    )
+
+```
+
+
